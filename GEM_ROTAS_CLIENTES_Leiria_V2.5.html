@@ -2,10 +2,28 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Rotas - M&B (V3)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- React e Tailwind -->
+    <!-- Título da App -->
+    <title>Gestor M&B</title>
+
+    <!-- CONFIGURAÇÃO PWA (INSTALAR COMO APP) -->
+    
+    <!-- 1. Cor do Tema (Barra do Android fica Azul M&B) -->
+    <meta name="theme-color" content="#1e3a8a">
+    
+    <!-- 2. Ícone para iPhone/iPad (Apple Touch Icon) -->
+    <!-- Este ícone é gerado por código SVG. Se tiveres um link de imagem, substitui o conteúdo de href="..." -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231e3a8a'/%3E%3Cpath d='M112 176h224v160H112zM336 240h96l32 48v48h-128z' fill='white'/%3E%3Ccircle cx='176' cy='384' r='48' fill='white'/%3E%3Ccircle cx='400' cy='384' r='48' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- 3. Ícone para Android e Navegador -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231e3a8a'/%3E%3Cpath d='M112 176h224v160H112zM336 240h96l32 48v48h-128z' fill='white'/%3E%3Ccircle cx='176' cy='384' r='48' fill='white'/%3E%3Ccircle cx='400' cy='384' r='48' fill='white'/%3E%3C/svg%3E">
+
+    <!-- 4. Manifesto da Web App (Define nome, cores e comportamento) -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkdlc3RvciBNJmIiLAogICJzaG9ydF9uYW1lIjogIkdlc3RvciBNJmIiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29xvcijogIiNmZmZmZmIiLAogICJ0aGVtZV9jb2xvciI6ICIjMWUzYThhIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2NoYXJzZXQ9dXRmLTgsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInJTNFJTNDcmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzEwMCcgZmlsbD0nIzFlM2E4YScvJTNFJTNDcGF0aCBkPSdNMTEyIDE3NmgyMjR2MTYwSDExMnpNMzM2IDI0MGg5NmwzMiA0OHY0OGgtMTI4eicgZmlsbD0nd2hpdGUnLyUzRSUzQ2NpcmNsZSBjeD0nMTc2JyBjeT0nMzg0JyByPSc0OCcgZmlsbD0nd2hpdGUnLyUzRSUzQ2NpcmNsZSBjeD0nNDAwJyBjeT0nMzg0JyByPSc0OCcgZmlsbD0nd2hpdGUnLyUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9LAogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtjaGFyc2V0PXV0Zi04LCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJyUzRSUzQ3JlY3Qgd2lkdGg9JzUxMicgaGVpZ2h0Rm89JzUxMicgcng9JzEwMCcgZmlsbD0nIzFlM2E4YScvJTNFJTNDcGF0aCBkPSdNMTEyIDE3NmgyMjR2MTYwSDExMnpNMzM2IDI0MGg5NmwzMiA0OHY0OGgtMTI4eicgZmlsbD0nd2hpdGUnLyUzRSUzQ2NpcmNsZSBjeD0nMTc2JyBjeT0nMzg0JyByPSc0OCcgZmlsbD0nd2hpdGUnLyUzRSUzQ2NpcmNsZSBjeD0nNDAwJyBjeT0nMzg0JyByPSc0OCcgZmlsbD0nd2hpdGUnLyUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+
+    <!-- FIM DA CONFIGURAÇÃO PWA -->
+
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,24 +33,24 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { font-family: 'Segoe UI', sans-serif; }
+        body { font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         .spinner {
             border: 4px solid rgba(0,0,0,0.1); width: 24px; height: 24px; border-radius: 50%;
             border-left-color: #ef4444; animation: spin 1s linear infinite;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        /* Para esconder a scrollbar nas sugestões mas manter funcionalidade */
+        /* Esconder scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-gray-100 text-slate-800">
+<body class="bg-gray-100 text-slate-800 select-none">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- DADOS INICIAIS (Exemplo) ---
+        // --- DADOS INICIAIS ---
         const INITIAL_DATA = [
             {
                 "Cod": 201824726,
@@ -89,8 +107,6 @@
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         
-                        // Limitamos o tamanho para não engasgar o telemóvel
-                        // Mas mantemos a cor original para o Tesseract v5 lidar (ele prefere assim)
                         const MAX_WIDTH = 2000;
                         let width = img.width;
                         let height = img.height;
@@ -104,7 +120,6 @@
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Converter apenas para escala de cinzentos (ajuda, mas sem binarização agressiva)
                         const imgData = ctx.getImageData(0, 0, width, height);
                         const data = imgData.data;
                         for (let i = 0; i < data.length; i += 4) {
@@ -120,7 +135,7 @@
                 });
             };
 
-            // --- LÓGICA OCR (HÍBRIDA: CÓDIGOS + NOMES) ---
+            // --- LÓGICA OCR (HÍBRIDA) ---
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -131,11 +146,9 @@
                 try {
                     const processedImage = await preprocessImage(file);
                     
-                    setOcrStatus('A ler texto (Isto pode demorar um pouco)...');
+                    setOcrStatus('A ler texto...');
 
                     const worker = await Tesseract.createWorker('por');
-                    // REMOVIDO: Whitelist de apenas números. Agora lê tudo.
-                    
                     const ret = await worker.recognize(processedImage);
                     const text = ret.data.text;
                     const textNormalized = text.toLowerCase();
@@ -145,9 +158,9 @@
                     setOcrStatus('A analisar dados...');
 
                     const newStops = [];
-                    const addedCodes = new Set(routeStops.map(s => String(s.Cod))); // Para não duplicar
+                    const addedCodes = new Set(routeStops.map(s => String(s.Cod)));
 
-                    // 1. ESTRATÉGIA: Procurar CÓDIGOS (Prioridade)
+                    // 1. Procurar CÓDIGOS
                     const foundNumbers = text.match(/\b\d{4,12}\b/g) || [];
                     
                     foundNumbers.forEach(numStr => {
@@ -158,11 +171,9 @@
                         }
                     });
 
-                    // 2. ESTRATÉGIA: Procurar NOMES (Backup se o código falhar)
-                    // Verifica se o nome do cliente aparece no texto lido
+                    // 2. Procurar NOMES
                     clients.forEach(client => {
                         if (!addedCodes.has(String(client.Cod)) && client.Nome && client.Nome.length > 5) {
-                            // Procura nome exato ou parte significativa
                             const clientName = client.Nome.toLowerCase();
                             if (textNormalized.includes(clientName)) {
                                 newStops.push(client);
@@ -173,9 +184,8 @@
 
                     if (newStops.length > 0) {
                         setRouteStops(prev => [...prev, ...newStops]);
-                        setOcrStatus(`Sucesso! Encontrados ${newStops.length} clientes (por código ou nome).`);
+                        setOcrStatus(`Sucesso! Encontrados ${newStops.length} clientes.`);
                     } else {
-                        console.log("Debug Texto Lido:", text);
                         setOcrStatus('Não detetei clientes. Tenta uma foto mais focada.');
                     }
                 } catch (err) {
@@ -186,7 +196,7 @@
                 }
             };
 
-            // --- FUNÇÕES ROTA ---
+            // --- FUNÇÕES DE INTERFACE E ROTA ---
             const filteredSuggestions = useMemo(() => {
                 if (!manualSearchTerm || manualSearchTerm.length < 2) return [];
                 const term = manualSearchTerm.toLowerCase();
@@ -202,7 +212,7 @@
                     setManualSearchTerm('');
                     setShowSuggestions(false);
                 } else {
-                    alert('Esse cliente já está na rota!');
+                    alert('Já existe na rota!');
                 }
             };
 
@@ -217,7 +227,7 @@
                 setRouteStops(n);
             };
 
-            // --- MAPAS (Google & Waze) ---
+            // --- MAPAS ---
             const getCoords = (c) => {
                 if (!c.Latitude || !c.Longitude) return { lat: '', lon: '', str: '' };
                 const lat = String(c.Latitude).replace(',', '.').trim();
@@ -243,7 +253,7 @@
                 window.open(wazeUrl, '_blank');
             };
 
-            // --- GESTÃO DE DADOS ---
+            // --- GESTÃO DADOS ---
             const filteredClientsDB = useMemo(() => {
                 if (!dbSearchTerm) return clients;
                 const term = dbSearchTerm.toLowerCase();
@@ -255,14 +265,10 @@
 
             const handleSaveEdit = () => {
                 if (!editingClient) return;
-                const updatedClients = clients.map(c => 
-                    c.Cod === editingClient.Cod ? editingClient : c
-                );
+                const updatedClients = clients.map(c => c.Cod === editingClient.Cod ? editingClient : c);
                 setClients(updatedClients);
                 setEditingClient(null);
-                const updatedRoute = routeStops.map(s => 
-                    s.Cod === editingClient.Cod ? editingClient : s
-                );
+                const updatedRoute = routeStops.map(s => s.Cod === editingClient.Cod ? editingClient : s);
                 setRouteStops(updatedRoute);
             };
 
@@ -270,15 +276,6 @@
                 const phone = client["N/D"];
                 if (phone && phone !== "N/D" && String(phone).length > 6) return phone;
                 return null;
-            };
-
-            const handleImportJson = () => {
-                try {
-                    const data = JSON.parse(jsonImport);
-                    processImportedData(data);
-                    setShowImportModal(false);
-                    setJsonImport('');
-                } catch (e) { alert('Erro no JSON. Verifica o formato.'); }
             };
 
             const handleFileImport = (e) => {
@@ -289,17 +286,24 @@
                     try {
                         const data = JSON.parse(event.target.result);
                         processImportedData(data);
-                    } catch (error) {
-                        alert('Erro ao ler o ficheiro JSON.');
-                    }
+                    } catch (error) { alert('Erro ao ler JSON.'); }
                 };
                 reader.readAsText(file);
                 e.target.value = '';
             };
 
+            const handleImportJson = () => {
+                try {
+                    const data = JSON.parse(jsonImport);
+                    processImportedData(data);
+                    setShowImportModal(false);
+                    setJsonImport('');
+                } catch (e) { alert('Erro no JSON.'); }
+            };
+
             const processImportedData = (data) => {
                 if (Array.isArray(data)) {
-                     if(confirm(`Vais carregar ${data.length} clientes. Substituir ou Adicionar? \nOK = Substituir | Cancelar = Adicionar`)) {
+                     if(confirm(`Vais carregar ${data.length} clientes. Substituir ou Adicionar?`)) {
                         setClients(data);
                     } else {
                         const newClients = [...clients, ...data];
@@ -308,14 +312,14 @@
                     }
                     alert('Base de dados atualizada!');
                 } else {
-                    alert('Os dados não estão no formato correto.');
+                    alert('Formato incorreto.');
                 }
             };
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col shadow-2xl relative">
                     
-                    {/* Header: AZUL MACHADO E BRITES */}
+                    {/* Header */}
                     <header className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-4 shadow-lg sticky top-0 z-20">
                         <div className="flex justify-between items-center">
                             <div>
@@ -325,23 +329,16 @@
                                 <p className="text-xs text-blue-100 opacity-80">Ricardo | Recheio</p>
                             </div>
                             <div className="flex bg-blue-950 rounded-lg p-1">
-                                <button onClick={() => setView('route')} className={`p-2 rounded ${view === 'route' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}>
-                                    <Icon name="map" />
-                                </button>
-                                <button onClick={() => setView('database')} className={`p-2 rounded ${view === 'database' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}>
-                                    <Icon name="database" />
-                                </button>
+                                <button onClick={() => setView('route')} className={`p-2 rounded ${view === 'route' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}><Icon name="map" /></button>
+                                <button onClick={() => setView('database')} className={`p-2 rounded ${view === 'database' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}><Icon name="database" /></button>
                             </div>
                         </div>
                     </header>
 
                     {/* MAIN CONTENT */}
                     <div className="flex-1 p-4 overflow-y-auto pb-32">
-                        
-                        {/* --- VISTA DE ROTA --- */}
                         {view === 'route' && (
                             <div className="space-y-4">
-                                {/* Caixa de Ações */}
                                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4 relative z-10">
                                     <div className="flex gap-2">
                                         <label className="flex-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-100 transition h-20">
@@ -349,62 +346,31 @@
                                             <span className="text-xs font-bold text-center">Ler Foto</span>
                                             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                                         </label>
-                                        
                                         <div className="flex-[2] relative">
-                                            <input 
-                                                className="border rounded p-2 text-sm h-10 w-full mb-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                                                placeholder="Procurar cliente para adicionar..."
-                                                value={manualSearchTerm}
-                                                onChange={e => {
-                                                    setManualSearchTerm(e.target.value);
-                                                    setShowSuggestions(true);
-                                                }}
-                                                onFocus={() => setShowSuggestions(true)}
-                                            />
+                                            <input className="border rounded p-2 text-sm h-10 w-full mb-1 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Procurar cliente..." value={manualSearchTerm} onChange={e => { setManualSearchTerm(e.target.value); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} />
                                             {showSuggestions && manualSearchTerm.length > 1 && (
                                                 <div className="absolute top-11 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-lg max-h-48 overflow-y-auto z-50">
-                                                    {filteredSuggestions.length > 0 ? (
-                                                        filteredSuggestions.map(c => (
-                                                            <div 
-                                                                key={c.Cod} 
-                                                                onClick={() => addClientToRoute(c)}
-                                                                className="p-3 border-b hover:bg-blue-50 cursor-pointer flex justify-between items-center"
-                                                            >
-                                                                <div className="overflow-hidden">
-                                                                    <p className="font-bold text-xs truncate">{c.Nome}</p>
-                                                                    <p className="text-[10px] text-gray-500">#{c.Cod}</p>
-                                                                </div>
-                                                                <Icon name="plus-circle" size={16} className="text-green-600 flex-shrink-0" />
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="p-3 text-xs text-gray-400">Nenhum cliente encontrado.</div>
-                                                    )}
+                                                    {filteredSuggestions.length > 0 ? filteredSuggestions.map(c => (
+                                                        <div key={c.Cod} onClick={() => addClientToRoute(c)} className="p-3 border-b hover:bg-blue-50 cursor-pointer flex justify-between items-center">
+                                                            <div className="overflow-hidden"><p className="font-bold text-xs truncate">{c.Nome}</p><p className="text-[10px] text-gray-500">#{c.Cod}</p></div>
+                                                            <Icon name="plus-circle" size={16} className="text-green-600 flex-shrink-0" />
+                                                        </div>
+                                                    )) : <div className="p-3 text-xs text-gray-400">Nenhum cliente.</div>}
                                                     <div onClick={() => setShowSuggestions(false)} className="p-2 text-center text-xs bg-gray-50 text-gray-500 cursor-pointer hover:bg-gray-100">Fechar</div>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    
-                                    {isProcessing && <div className="flex items-center gap-2 text-sm text-gray-500 justify-center"><div className="spinner"></div> Processando imagem...</div>}
+                                    {isProcessing && <div className="flex items-center gap-2 text-sm text-gray-500 justify-center"><div className="spinner"></div> Processando...</div>}
                                     {ocrStatus && !isProcessing && <div className="text-xs text-center text-blue-600 font-medium bg-blue-50 p-1 rounded">{ocrStatus}</div>}
                                 </div>
 
-                                {/* Lista da Rota */}
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
                                         <h2 className="font-bold text-gray-700">Rota ({routeStops.length})</h2>
-                                        {routeStops.length > 0 && (
-                                            <button onClick={() => setRouteStops([])} className="text-xs text-red-500 underline">Limpar</button>
-                                        )}
+                                        {routeStops.length > 0 && <button onClick={() => setRouteStops([])} className="text-xs text-red-500 underline">Limpar</button>}
                                     </div>
-                                    
-                                    {routeStops.length === 0 ? (
-                                        <div className="text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
-                                            <Icon name="map-pin" className="mx-auto mb-2 opacity-50" size={32}/>
-                                            <p className="text-sm">Rota vazia.</p>
-                                        </div>
-                                    ) : (
+                                    {routeStops.length === 0 ? <div className="text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-300"><Icon name="map-pin" className="mx-auto mb-2 opacity-50" size={32}/><p className="text-sm">Rota vazia.</p></div> : 
                                         <ul className="space-y-2">
                                             {routeStops.map((stop, idx) => (
                                                 <li key={idx} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
@@ -412,53 +378,33 @@
                                                         <span className="flex-shrink-0 bg-blue-100 text-blue-800 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs border border-blue-200">{idx + 1}</span>
                                                         <div className="min-w-0">
                                                             <p className="font-bold text-sm text-gray-800 truncate">{stop.Nome || "Sem Nome"}</p>
-                                                            <div className="flex gap-2 text-[10px] text-gray-500">
-                                                                <span className="bg-gray-100 px-1 rounded">#{stop.Cod}</span>
-                                                                {stop.JH1 && stop.JH1 !== "N/D" && <span className="text-blue-600 font-medium">{stop.JH1}-{stop.JH2}</span>}
-                                                            </div>
+                                                            <div className="flex gap-2 text-[10px] text-gray-500"><span className="bg-gray-100 px-1 rounded">#{stop.Cod}</span>{stop.JH1 && stop.JH1 !== "N/D" && <span className="text-blue-600 font-medium">{stop.JH1}-{stop.JH2}</span>}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        <div className="flex flex-col">
-                                                            <button onClick={() => moveStop(idx, -1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-up" size={14}/></button>
-                                                            <button onClick={() => moveStop(idx, 1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-down" size={14}/></button>
-                                                        </div>
+                                                        <div className="flex flex-col"><button onClick={() => moveStop(idx, -1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-up" size={14}/></button><button onClick={() => moveStop(idx, 1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-down" size={14}/></button></div>
                                                         <button onClick={() => removeStop(idx)} className="p-2 text-red-300 hover:text-red-600"><Icon name="x" size={16}/></button>
                                                     </div>
                                                 </li>
                                             ))}
                                         </ul>
-                                    )}
+                                    }
                                 </div>
                             </div>
                         )}
 
-                        {/* --- VISTA DE BASE DE DADOS --- */}
                         {view === 'database' && (
                             <div className="space-y-4">
                                 <div className="sticky top-0 bg-gray-50 pt-2 z-10 space-y-2 pb-2 shadow-sm">
                                     <div className="relative">
                                         <Icon name="search" size={16} className="absolute left-3 top-3 text-gray-400" />
-                                        <input 
-                                            className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                                            placeholder="Procurar por nome, código..."
-                                            value={dbSearchTerm}
-                                            onChange={e => setDbSearchTerm(e.target.value)}
-                                        />
+                                        <input className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="Procurar..." value={dbSearchTerm} onChange={e => setDbSearchTerm(e.target.value)} />
                                     </div>
                                     <div className="flex gap-2">
                                         <label className="flex-1 bg-white border border-blue-100 hover:bg-blue-50 text-blue-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm">
-                                            <Icon name="upload" size={14} />
-                                            Carregar Ficheiro JSON
-                                            <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
+                                            <Icon name="upload" size={14} /> JSON <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                                         </label>
-                                        <button 
-                                            onClick={() => setShowImportModal(true)}
-                                            className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
-                                        >
-                                            <Icon name="clipboard" size={14} />
-                                            Colar Texto
-                                        </button>
+                                        <button onClick={() => setShowImportModal(true)} className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"><Icon name="clipboard" size={14} /> Colar</button>
                                     </div>
                                 </div>
 
@@ -470,22 +416,15 @@
                                         return (
                                             <div key={client.Cod} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 relative group">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <div>
-                                                        <h3 className="font-bold text-gray-800 text-sm">{client.Nome || "Sem Nome"}</h3>
-                                                        <span className="text-xs text-blue-800 font-mono bg-blue-50 px-1 rounded">#{client.Cod}</span>
-                                                    </div>
-                                                    <button onClick={() => setEditingClient(client)} className="p-2 text-gray-400 hover:text-blue-600 bg-gray-50 rounded-full">
-                                                        <Icon name="pencil" size={14} />
-                                                    </button>
+                                                    <div><h3 className="font-bold text-gray-800 text-sm">{client.Nome || "Sem Nome"}</h3><span className="text-xs text-blue-800 font-mono bg-blue-50 px-1 rounded">#{client.Cod}</span></div>
+                                                    <button onClick={() => setEditingClient(client)} className="p-2 text-gray-400 hover:text-blue-600 bg-gray-50 rounded-full"><Icon name="pencil" size={14} /></button>
                                                 </div>
-
                                                 <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded mb-3">
                                                     <div><span className="block text-[10px] text-gray-400 uppercase">Janelas</span><span className="font-semibold">{client.JH1 !== "N/D" ? `${client.JH1} / ${client.JH2}` : "N/D"}</span></div>
                                                     <div><span className="block text-[10px] text-gray-400 uppercase">Viatura</span><span className="font-semibold">{client["Limitação de Viatura"] || "N/D"}</span></div>
                                                     <div><span className="block text-[10px] text-gray-400 uppercase">Palete?</span><span className={`font-semibold ${client["Descarga á palete Sim/Não"] === "Sim" ? "text-green-600" : "text-red-600"}`}>{client["Descarga á palete Sim/Não"] || "N/D"}</span></div>
                                                     <div><span className="block text-[10px] text-gray-400 uppercase">Arrumação?</span><span className={`font-semibold ${client["Cliente exige arrumação de mercadoria?"] === "Sim" ? "text-orange-600" : "text-gray-600"}`}>{client["Cliente exige arrumação de mercadoria?"] || "N/D"}</span></div>
                                                 </div>
-
                                                 <div className="flex gap-2">
                                                     {phone && <a href={`tel:${phone}`} className="flex-1 flex items-center justify-center gap-2 bg-green-100 text-green-800 py-2 rounded-lg text-sm font-bold hover:bg-green-200 transition"><Icon name="phone" size={16} /> Ligar</a>}
                                                     {hasCoords && <a href={`https://www.google.com/maps/search/?api=1&query=${coords.str}`} target="_blank" className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-800 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition"><Icon name="map-pin" size={16} /> Maps</a>}
@@ -493,13 +432,13 @@
                                             </div>
                                         );
                                     })}
-                                    {filteredClientsDB.length === 0 && <p className="text-center text-gray-400 text-sm py-4">Nenhum cliente encontrado.</p>}
+                                    {filteredClientsDB.length === 0 && <p className="text-center text-gray-400 text-sm py-4">Nenhum cliente.</p>}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* ACTIONS BAR */}
+                    {/* Footer Actions */}
                     {view === 'route' && routeStops.length > 0 && (
                         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:max-w-md md:mx-auto z-30">
                             <button onClick={openNextWaze} className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center gap-1 text-sm"><Icon name="navigation" size={18} /> Próx. (Waze)</button>
@@ -507,35 +446,26 @@
                         </div>
                     )}
 
-                    {/* MODAL EDITAR CLIENTE */}
+                    {/* Modals */}
                     {editingClient && (
                         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl p-4 animate-fadeIn">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-bold text-lg">Editar Cliente</h3>
-                                    <button onClick={() => setEditingClient(null)} className="text-gray-400"><Icon name="x" /></button>
-                                </div>
+                                <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg">Editar</h3><button onClick={() => setEditingClient(null)} className="text-gray-400"><Icon name="x" /></button></div>
                                 <div className="space-y-3">
                                     <div><label className="text-xs font-bold text-gray-500">Nome</label><input className="w-full border p-2 rounded text-sm" value={editingClient.Nome} onChange={e => setEditingClient({...editingClient, Nome: e.target.value})} /></div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div><label className="text-xs font-bold text-gray-500">JH1 (Abertura)</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH1} onChange={e => setEditingClient({...editingClient, JH1: e.target.value})} /></div>
-                                        <div><label className="text-xs font-bold text-gray-500">JH2 (Fecho)</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH2} onChange={e => setEditingClient({...editingClient, JH2: e.target.value})} /></div>
+                                        <div><label className="text-xs font-bold text-gray-500">JH1</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH1} onChange={e => setEditingClient({...editingClient, JH1: e.target.value})} /></div>
+                                        <div><label className="text-xs font-bold text-gray-500">JH2</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH2} onChange={e => setEditingClient({...editingClient, JH2: e.target.value})} /></div>
                                     </div>
-                                    <div><label className="text-xs font-bold text-gray-500">Viatura / Limitação</label><input className="w-full border p-2 rounded text-sm" value={editingClient["Limitação de Viatura"]} onChange={e => setEditingClient({...editingClient, "Limitação de Viatura": e.target.value})} /></div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500">Descarga Palete?</label>
-                                        <select className="w-full border p-2 rounded text-sm" value={editingClient["Descarga á palete Sim/Não"]} onChange={e => setEditingClient({...editingClient, "Descarga á palete Sim/Não": e.target.value})}>
-                                            <option value="Sim">Sim</option><option value="Não">Não</option><option value="N/D">N/D</option>
-                                        </select>
-                                    </div>
-                                    <div><label className="text-xs font-bold text-gray-500">Contacto (N/D)</label><input className="w-full border p-2 rounded text-sm" type="number" value={editingClient["N/D"]} onChange={e => setEditingClient({...editingClient, "N/D": e.target.value})} /></div>
-                                    <button onClick={handleSaveEdit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg mt-4 shadow hover:bg-blue-700">Guardar Alterações</button>
+                                    <div><label className="text-xs font-bold text-gray-500">Viatura</label><input className="w-full border p-2 rounded text-sm" value={editingClient["Limitação de Viatura"]} onChange={e => setEditingClient({...editingClient, "Limitação de Viatura": e.target.value})} /></div>
+                                    <div><label className="text-xs font-bold text-gray-500">Palete?</label><select className="w-full border p-2 rounded text-sm" value={editingClient["Descarga á palete Sim/Não"]} onChange={e => setEditingClient({...editingClient, "Descarga á palete Sim/Não": e.target.value})}><option value="Sim">Sim</option><option value="Não">Não</option><option value="N/D">N/D</option></select></div>
+                                    <div><label className="text-xs font-bold text-gray-500">Contacto</label><input className="w-full border p-2 rounded text-sm" type="number" value={editingClient["N/D"]} onChange={e => setEditingClient({...editingClient, "N/D": e.target.value})} /></div>
+                                    <button onClick={handleSaveEdit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg mt-4 shadow hover:bg-blue-700">Guardar</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Modal Importação */}
                     {showImportModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-xl p-4 w-full max-w-sm shadow-2xl">
