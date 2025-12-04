@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motor de Busca Clientes</title>
+
+    <!-- Ícones da aplicação -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-loja-192.png">
+    <link rel="apple-touch-icon" href="icon-loja-192.png">
+
+    <!-- Manifesto PWA -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Cor da barra / tema -->
+    <meta name="theme-color" content="#047857">
+
     <!-- Tailwind CSS CDN para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -16,20 +27,110 @@
         .accent-green-border { border-color: #047857; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Cor de fundo principal clara */
-            color: #1f2937; /* Texto escuro por defeito */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-        /* Estilo para focar na barra de pesquisa */
-        #search-bar:focus {
+
+        /* Estilo da barra de scroll no desktop */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e5e7eb;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #047857;
+            border-radius: 9999px;
+        }
+
+        /* Estilo dos campos de input */
+        input, select {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.5); /* Sombra suave verde */
         }
-        /* Scrollbar discreta */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #047857; border-radius: 4px; }
-        /* Estilo das Tags */
-        .bg-tag { background-color: #e5e7eb; color: #374151; }
+
+        /* Destaque dos cards */
+        .card-hover {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.2);
+        }
+
+        /* Badge de grupo */
+        .tag-badge {
+            background: #ecfdf5;
+            color: #047857;
+            font-weight: 600;
+            padding: 0.15rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* Botões principais */
+        .btn-primary {
+            background-color: #047857;
+            color: white;
+            font-weight: 600;
+            border-radius: 9999px;
+            padding: 0.5rem 1.4rem;
+        }
+        .btn-primary:hover {
+            background-color: #065f46;
+        }
+
+        /* Badges de horário */
+        .badge-horario {
+            border-radius: 9999px;
+            padding: 0.1rem 0.6rem;
+            font-size: 0.7rem;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 500;
+        }
+
+        /* Badges de estado (descarga, limitação...) */
+        .badge-status {
+            border-radius: 9999px;
+            padding: 0.12rem 0.7rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge-status-ok {
+            background-color: #ecfdf3;
+            color: #16a34a;
+        }
+        .badge-status-alerta {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+        .badge-status-nd {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+
+        /* Destaques da morada */
+        .morada-link {
+            color: #047857;
+            font-weight: 500;
+        }
+        .morada-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Ícones pequenos */
+        .icon-label {
+            width: 1.25rem;
+            text-align: center;
+            display: inline-block;
+        }
+
+        /* Alertas de topo */
+        .top-alert {
+            border-left: 4px solid #047857;
+        }
 
         /* === ANIMAÇÃO DO CAMIÃO === */
         @keyframes truck-movement {
@@ -45,6 +146,7 @@
         /* ========================== */
     </style>
 </head>
+
 <body class="p-4 md:p-8 text-dark bg-light-main">
 
     <header class="text-center mb-8">
@@ -53,6 +155,11 @@
         </h1>
         <p class="text-gray-600 mt-2">A base de dados de clientes está pronta. Comece a pesquisar instantaneamente!</p>
     </header>
+    
+ <button id="install-btn"
+        class="block mx-auto mb-4 px-4 py-2 rounded-lg accent-green text-white font-semibold shadow-md hidden">
+        Instalar app
+    </button>
 
     <div class="max-w-4xl mx-auto bg-card p-6 rounded-xl shadow-lg mb-8">
         
@@ -32985,5 +33092,43 @@
         // Iniciar a aplicação imediatamente
         initApp();
     </script>
+    </script>
+    <script>
+    // --- REGISTO DO SERVICE WORKER (necessário para ser instalável como app) ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registado:', reg.scope))
+                .catch(err => console.error('Erro no Service Worker:', err));
+        });
+    }
+
+    // --- LÓGICA DO BOTÃO "INSTALAR APP" ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Impede o prompt automático
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) {
+            installBtn.classList.remove('hidden'); // mostra o botão
+        }
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('Resultado do pedido de instalação:', outcome);
+            deferredPrompt = null;
+            installBtn.classList.add('hidden');
+        });
+    }
+    </script>
+
 </body>
 </html>
+
+
