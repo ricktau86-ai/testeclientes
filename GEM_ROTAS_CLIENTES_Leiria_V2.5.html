@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Rotas - M&B (V3)</title>
+    
+    <!-- React e Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tesseract V5 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; }
+        .spinner {
+            border: 4px solid rgba(0,0,0,0.1); width: 24px; height: 24px; border-radius: 50%;
+            border-left-color: #ef4444; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* Para esconder a scrollbar nas sugestões mas manter funcionalidade */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- DADOS INICIAIS (Exemplo) ---
+        const INITIAL_DATA = [
+            {
+                "Cod": 201824726,
+                "Nome": "CENTRO SOC PAROQUIAL BAIRRO",
+                "Latitude": "39,560799",
+                "Longitude": "-9,019437",
+                "JH1": "08:00", "JH2": "12:00", "JH3": "14:00", "JH4": "17:00",
+                "Limitação de Viatura": "26T",
+                "Descarga á palete Sim/Não": "Não",
+                "Cliente exige arrumação de mercadoria?": "Não",
+                "Dificuldade de descarga": "N/D",
+                "N/D": 965017772
+            }
+        ];
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+            return <i data-lucide={name} width={size} height={size} className={className}></i>;
+        };
+
+        const App = () => {
+            // Estados Principais
+            const [view, setView] = useState('route'); 
+            const [clients, setClients] = useState(() => {
+                const saved = localStorage.getItem('mb_clients_v2');
+                return saved ? JSON.parse(saved) : INITIAL_DATA;
+            });
+            const [routeStops, setRouteStops] = useState([]);
+            
+            // Estados OCR / Processamento
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [ocrStatus, setOcrStatus] = useState('');
+            
+            // Estados de Pesquisa e Inputs
+            const [manualSearchTerm, setManualSearchTerm] = useState('');
+            const [dbSearchTerm, setDbSearchTerm] = useState('');
+            const [showSuggestions, setShowSuggestions] = useState(false);
+            
+            // Estados de Modais
+            const [jsonImport, setJsonImport] = useState('');
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [editingClient, setEditingClient] = useState(null);
+
+            useEffect(() => {
+                localStorage.setItem('mb_clients_v2', JSON.stringify(clients));
+            }, [clients]);
+
+            // --- LÓGICA DE PRÉ-PROCESSAMENTO (SIMPLIFICADA) ---
+            const preprocessImage = (file) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Limitamos o tamanho para não engasgar o telemóvel
+                        // Mas mantemos a cor original para o Tesseract v5 lidar (ele prefere assim)
+                        const MAX_WIDTH = 2000;
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Converter apenas para escala de cinzentos (ajuda, mas sem binarização agressiva)
+                        const imgData = ctx.getImageData(0, 0, width, height);
+                        const data = imgData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const avg = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+                            data[i] = avg;
+                            data[i + 1] = avg;
+                            data[i + 2] = avg;
+                        }
+                        ctx.putImageData(imgData, 0, 0);
+
+                        resolve(canvas.toDataURL('image/jpeg'));
+                    };
+                });
+            };
+
+            // --- LÓGICA OCR (HÍBRIDA: CÓDIGOS + NOMES) ---
+            const handleImageUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                setIsProcessing(true);
+                setOcrStatus('A preparar imagem...');
+
+                try {
+                    const processedImage = await preprocessImage(file);
+                    
+                    setOcrStatus('A ler texto (Isto pode demorar um pouco)...');
+
+                    const worker = await Tesseract.createWorker('por');
+                    // REMOVIDO: Whitelist de apenas números. Agora lê tudo.
+                    
+                    const ret = await worker.recognize(processedImage);
+                    const text = ret.data.text;
+                    const textNormalized = text.toLowerCase();
+                    
+                    await worker.terminate();
+
+                    setOcrStatus('A analisar dados...');
+
+                    const newStops = [];
+                    const addedCodes = new Set(routeStops.map(s => String(s.Cod))); // Para não duplicar
+
+                    // 1. ESTRATÉGIA: Procurar CÓDIGOS (Prioridade)
+                    const foundNumbers = text.match(/\b\d{4,12}\b/g) || [];
+                    
+                    foundNumbers.forEach(numStr => {
+                        const client = clients.find(c => String(c.Cod) === numStr);
+                        if (client && !addedCodes.has(String(client.Cod))) {
+                            newStops.push(client);
+                            addedCodes.add(String(client.Cod));
+                        }
+                    });
+
+                    // 2. ESTRATÉGIA: Procurar NOMES (Backup se o código falhar)
+                    // Verifica se o nome do cliente aparece no texto lido
+                    clients.forEach(client => {
+                        if (!addedCodes.has(String(client.Cod)) && client.Nome && client.Nome.length > 5) {
+                            // Procura nome exato ou parte significativa
+                            const clientName = client.Nome.toLowerCase();
+                            if (textNormalized.includes(clientName)) {
+                                newStops.push(client);
+                                addedCodes.add(String(client.Cod));
+                            }
+                        }
+                    });
+
+                    if (newStops.length > 0) {
+                        setRouteStops(prev => [...prev, ...newStops]);
+                        setOcrStatus(`Sucesso! Encontrados ${newStops.length} clientes (por código ou nome).`);
+                    } else {
+                        console.log("Debug Texto Lido:", text);
+                        setOcrStatus('Não detetei clientes. Tenta uma foto mais focada.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setOcrStatus('Erro ao processar imagem.');
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            // --- FUNÇÕES ROTA ---
+            const filteredSuggestions = useMemo(() => {
+                if (!manualSearchTerm || manualSearchTerm.length < 2) return [];
+                const term = manualSearchTerm.toLowerCase();
+                return clients.filter(c => 
+                    String(c.Cod).includes(term) || 
+                    (c.Nome && String(c.Nome).toLowerCase().includes(term))
+                ).slice(0, 5); 
+            }, [manualSearchTerm, clients]);
+
+            const addClientToRoute = (client) => {
+                if (!routeStops.find(s => s.Cod === client.Cod)) {
+                    setRouteStops([...routeStops, client]);
+                    setManualSearchTerm('');
+                    setShowSuggestions(false);
+                } else {
+                    alert('Esse cliente já está na rota!');
+                }
+            };
+
+            const removeStop = (index) => {
+                const n = [...routeStops]; n.splice(index, 1); setRouteStops(n);
+            };
+
+            const moveStop = (index, dir) => {
+                if ((dir === -1 && index === 0) || (dir === 1 && index === routeStops.length - 1)) return;
+                const n = [...routeStops];
+                [n[index], n[index + dir]] = [n[index + dir], n[index]];
+                setRouteStops(n);
+            };
+
+            // --- MAPAS (Google & Waze) ---
+            const getCoords = (c) => {
+                if (!c.Latitude || !c.Longitude) return { lat: '', lon: '', str: '' };
+                const lat = String(c.Latitude).replace(',', '.').trim();
+                const lon = String(c.Longitude).replace(',', '.').trim();
+                return { lat, lon, str: `${lat},${lon}` };
+            };
+
+            const openGoogleMapsRoute = () => {
+                if (routeStops.length === 0) return;
+                const baseUrl = "https://www.google.com/maps/dir/?api=1";
+                const dest = getCoords(routeStops[routeStops.length - 1]).str;
+                const waypoints = routeStops.slice(0, -1).map(s => getCoords(s).str).join('|');
+                let fullUrl = `${baseUrl}&destination=${dest}`;
+                if (waypoints) fullUrl += `&waypoints=${waypoints}`;
+                window.open(fullUrl, '_blank');
+            };
+
+            const openNextWaze = () => {
+                if (routeStops.length === 0) return;
+                const nextClient = routeStops[0];
+                const { lat, lon } = getCoords(nextClient);
+                const wazeUrl = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+                window.open(wazeUrl, '_blank');
+            };
+
+            // --- GESTÃO DE DADOS ---
+            const filteredClientsDB = useMemo(() => {
+                if (!dbSearchTerm) return clients;
+                const term = dbSearchTerm.toLowerCase();
+                return clients.filter(c => 
+                    String(c.Cod).includes(term) || 
+                    (c.Nome && String(c.Nome).toLowerCase().includes(term))
+                );
+            }, [dbSearchTerm, clients]);
+
+            const handleSaveEdit = () => {
+                if (!editingClient) return;
+                const updatedClients = clients.map(c => 
+                    c.Cod === editingClient.Cod ? editingClient : c
+                );
+                setClients(updatedClients);
+                setEditingClient(null);
+                const updatedRoute = routeStops.map(s => 
+                    s.Cod === editingClient.Cod ? editingClient : s
+                );
+                setRouteStops(updatedRoute);
+            };
+
+            const getPhone = (client) => {
+                const phone = client["N/D"];
+                if (phone && phone !== "N/D" && String(phone).length > 6) return phone;
+                return null;
+            };
+
+            const handleImportJson = () => {
+                try {
+                    const data = JSON.parse(jsonImport);
+                    processImportedData(data);
+                    setShowImportModal(false);
+                    setJsonImport('');
+                } catch (e) { alert('Erro no JSON. Verifica o formato.'); }
+            };
+
+            const handleFileImport = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        processImportedData(data);
+                    } catch (error) {
+                        alert('Erro ao ler o ficheiro JSON.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            };
+
+            const processImportedData = (data) => {
+                if (Array.isArray(data)) {
+                     if(confirm(`Vais carregar ${data.length} clientes. Substituir ou Adicionar? \nOK = Substituir | Cancelar = Adicionar`)) {
+                        setClients(data);
+                    } else {
+                        const newClients = [...clients, ...data];
+                        const unique = newClients.filter((v,i,a)=>a.findIndex(v2=>(v2.Cod===v.Cod))===i);
+                        setClients(unique);
+                    }
+                    alert('Base de dados atualizada!');
+                } else {
+                    alert('Os dados não estão no formato correto.');
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col shadow-2xl relative">
+                    
+                    {/* Header: AZUL MACHADO E BRITES */}
+                    <header className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-4 shadow-lg sticky top-0 z-20">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h1 className="text-lg font-bold flex items-center gap-2">
+                                    <Icon name="truck" className="text-white" /> Gestor M&B
+                                </h1>
+                                <p className="text-xs text-blue-100 opacity-80">Ricardo | Recheio</p>
+                            </div>
+                            <div className="flex bg-blue-950 rounded-lg p-1">
+                                <button onClick={() => setView('route')} className={`p-2 rounded ${view === 'route' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}>
+                                    <Icon name="map" />
+                                </button>
+                                <button onClick={() => setView('database')} className={`p-2 rounded ${view === 'database' ? 'bg-white text-blue-900 shadow' : 'text-blue-200'}`}>
+                                    <Icon name="database" />
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* MAIN CONTENT */}
+                    <div className="flex-1 p-4 overflow-y-auto pb-32">
+                        
+                        {/* --- VISTA DE ROTA --- */}
+                        {view === 'route' && (
+                            <div className="space-y-4">
+                                {/* Caixa de Ações */}
+                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4 relative z-10">
+                                    <div className="flex gap-2">
+                                        <label className="flex-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-100 transition h-20">
+                                            <Icon name="camera" className="mb-1"/>
+                                            <span className="text-xs font-bold text-center">Ler Foto</span>
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                        </label>
+                                        
+                                        <div className="flex-[2] relative">
+                                            <input 
+                                                className="border rounded p-2 text-sm h-10 w-full mb-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                                                placeholder="Procurar cliente para adicionar..."
+                                                value={manualSearchTerm}
+                                                onChange={e => {
+                                                    setManualSearchTerm(e.target.value);
+                                                    setShowSuggestions(true);
+                                                }}
+                                                onFocus={() => setShowSuggestions(true)}
+                                            />
+                                            {showSuggestions && manualSearchTerm.length > 1 && (
+                                                <div className="absolute top-11 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-lg max-h-48 overflow-y-auto z-50">
+                                                    {filteredSuggestions.length > 0 ? (
+                                                        filteredSuggestions.map(c => (
+                                                            <div 
+                                                                key={c.Cod} 
+                                                                onClick={() => addClientToRoute(c)}
+                                                                className="p-3 border-b hover:bg-blue-50 cursor-pointer flex justify-between items-center"
+                                                            >
+                                                                <div className="overflow-hidden">
+                                                                    <p className="font-bold text-xs truncate">{c.Nome}</p>
+                                                                    <p className="text-[10px] text-gray-500">#{c.Cod}</p>
+                                                                </div>
+                                                                <Icon name="plus-circle" size={16} className="text-green-600 flex-shrink-0" />
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="p-3 text-xs text-gray-400">Nenhum cliente encontrado.</div>
+                                                    )}
+                                                    <div onClick={() => setShowSuggestions(false)} className="p-2 text-center text-xs bg-gray-50 text-gray-500 cursor-pointer hover:bg-gray-100">Fechar</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {isProcessing && <div className="flex items-center gap-2 text-sm text-gray-500 justify-center"><div className="spinner"></div> Processando imagem...</div>}
+                                    {ocrStatus && !isProcessing && <div className="text-xs text-center text-blue-600 font-medium bg-blue-50 p-1 rounded">{ocrStatus}</div>}
+                                </div>
+
+                                {/* Lista da Rota */}
+                                <div>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <h2 className="font-bold text-gray-700">Rota ({routeStops.length})</h2>
+                                        {routeStops.length > 0 && (
+                                            <button onClick={() => setRouteStops([])} className="text-xs text-red-500 underline">Limpar</button>
+                                        )}
+                                    </div>
+                                    
+                                    {routeStops.length === 0 ? (
+                                        <div className="text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+                                            <Icon name="map-pin" className="mx-auto mb-2 opacity-50" size={32}/>
+                                            <p className="text-sm">Rota vazia.</p>
+                                        </div>
+                                    ) : (
+                                        <ul className="space-y-2">
+                                            {routeStops.map((stop, idx) => (
+                                                <li key={idx} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                        <span className="flex-shrink-0 bg-blue-100 text-blue-800 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs border border-blue-200">{idx + 1}</span>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-sm text-gray-800 truncate">{stop.Nome || "Sem Nome"}</p>
+                                                            <div className="flex gap-2 text-[10px] text-gray-500">
+                                                                <span className="bg-gray-100 px-1 rounded">#{stop.Cod}</span>
+                                                                {stop.JH1 && stop.JH1 !== "N/D" && <span className="text-blue-600 font-medium">{stop.JH1}-{stop.JH2}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="flex flex-col">
+                                                            <button onClick={() => moveStop(idx, -1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-up" size={14}/></button>
+                                                            <button onClick={() => moveStop(idx, 1)} className="p-1 text-gray-300 hover:text-blue-600"><Icon name="chevron-down" size={14}/></button>
+                                                        </div>
+                                                        <button onClick={() => removeStop(idx)} className="p-2 text-red-300 hover:text-red-600"><Icon name="x" size={16}/></button>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* --- VISTA DE BASE DE DADOS --- */}
+                        {view === 'database' && (
+                            <div className="space-y-4">
+                                <div className="sticky top-0 bg-gray-50 pt-2 z-10 space-y-2 pb-2 shadow-sm">
+                                    <div className="relative">
+                                        <Icon name="search" size={16} className="absolute left-3 top-3 text-gray-400" />
+                                        <input 
+                                            className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                            placeholder="Procurar por nome, código..."
+                                            value={dbSearchTerm}
+                                            onChange={e => setDbSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <label className="flex-1 bg-white border border-blue-100 hover:bg-blue-50 text-blue-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm">
+                                            <Icon name="upload" size={14} />
+                                            Carregar Ficheiro JSON
+                                            <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
+                                        </label>
+                                        <button 
+                                            onClick={() => setShowImportModal(true)}
+                                            className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                                        >
+                                            <Icon name="clipboard" size={14} />
+                                            Colar Texto
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {filteredClientsDB.slice(0, 50).map((client) => {
+                                        const phone = getPhone(client);
+                                        const coords = getCoords(client);
+                                        const hasCoords = coords.lat && coords.lon;
+                                        return (
+                                            <div key={client.Cod} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 relative group">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-800 text-sm">{client.Nome || "Sem Nome"}</h3>
+                                                        <span className="text-xs text-blue-800 font-mono bg-blue-50 px-1 rounded">#{client.Cod}</span>
+                                                    </div>
+                                                    <button onClick={() => setEditingClient(client)} className="p-2 text-gray-400 hover:text-blue-600 bg-gray-50 rounded-full">
+                                                        <Icon name="pencil" size={14} />
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded mb-3">
+                                                    <div><span className="block text-[10px] text-gray-400 uppercase">Janelas</span><span className="font-semibold">{client.JH1 !== "N/D" ? `${client.JH1} / ${client.JH2}` : "N/D"}</span></div>
+                                                    <div><span className="block text-[10px] text-gray-400 uppercase">Viatura</span><span className="font-semibold">{client["Limitação de Viatura"] || "N/D"}</span></div>
+                                                    <div><span className="block text-[10px] text-gray-400 uppercase">Palete?</span><span className={`font-semibold ${client["Descarga á palete Sim/Não"] === "Sim" ? "text-green-600" : "text-red-600"}`}>{client["Descarga á palete Sim/Não"] || "N/D"}</span></div>
+                                                    <div><span className="block text-[10px] text-gray-400 uppercase">Arrumação?</span><span className={`font-semibold ${client["Cliente exige arrumação de mercadoria?"] === "Sim" ? "text-orange-600" : "text-gray-600"}`}>{client["Cliente exige arrumação de mercadoria?"] || "N/D"}</span></div>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    {phone && <a href={`tel:${phone}`} className="flex-1 flex items-center justify-center gap-2 bg-green-100 text-green-800 py-2 rounded-lg text-sm font-bold hover:bg-green-200 transition"><Icon name="phone" size={16} /> Ligar</a>}
+                                                    {hasCoords && <a href={`https://www.google.com/maps/search/?api=1&query=${coords.str}`} target="_blank" className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-800 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition"><Icon name="map-pin" size={16} /> Maps</a>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {filteredClientsDB.length === 0 && <p className="text-center text-gray-400 text-sm py-4">Nenhum cliente encontrado.</p>}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ACTIONS BAR */}
+                    {view === 'route' && routeStops.length > 0 && (
+                        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:max-w-md md:mx-auto z-30">
+                            <button onClick={openNextWaze} className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center gap-1 text-sm"><Icon name="navigation" size={18} /> Próx. (Waze)</button>
+                            <button onClick={openGoogleMapsRoute} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center gap-1 text-sm"><Icon name="map" size={18} /> Rota (Maps)</button>
+                        </div>
+                    )}
+
+                    {/* MODAL EDITAR CLIENTE */}
+                    {editingClient && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl p-4 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-lg">Editar Cliente</h3>
+                                    <button onClick={() => setEditingClient(null)} className="text-gray-400"><Icon name="x" /></button>
+                                </div>
+                                <div className="space-y-3">
+                                    <div><label className="text-xs font-bold text-gray-500">Nome</label><input className="w-full border p-2 rounded text-sm" value={editingClient.Nome} onChange={e => setEditingClient({...editingClient, Nome: e.target.value})} /></div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div><label className="text-xs font-bold text-gray-500">JH1 (Abertura)</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH1} onChange={e => setEditingClient({...editingClient, JH1: e.target.value})} /></div>
+                                        <div><label className="text-xs font-bold text-gray-500">JH2 (Fecho)</label><input className="w-full border p-2 rounded text-sm" value={editingClient.JH2} onChange={e => setEditingClient({...editingClient, JH2: e.target.value})} /></div>
+                                    </div>
+                                    <div><label className="text-xs font-bold text-gray-500">Viatura / Limitação</label><input className="w-full border p-2 rounded text-sm" value={editingClient["Limitação de Viatura"]} onChange={e => setEditingClient({...editingClient, "Limitação de Viatura": e.target.value})} /></div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500">Descarga Palete?</label>
+                                        <select className="w-full border p-2 rounded text-sm" value={editingClient["Descarga á palete Sim/Não"]} onChange={e => setEditingClient({...editingClient, "Descarga á palete Sim/Não": e.target.value})}>
+                                            <option value="Sim">Sim</option><option value="Não">Não</option><option value="N/D">N/D</option>
+                                        </select>
+                                    </div>
+                                    <div><label className="text-xs font-bold text-gray-500">Contacto (N/D)</label><input className="w-full border p-2 rounded text-sm" type="number" value={editingClient["N/D"]} onChange={e => setEditingClient({...editingClient, "N/D": e.target.value})} /></div>
+                                    <button onClick={handleSaveEdit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg mt-4 shadow hover:bg-blue-700">Guardar Alterações</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal Importação */}
+                    {showImportModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl p-4 w-full max-w-sm shadow-2xl">
+                                <h3 className="font-bold text-lg mb-2">Importar Clientes</h3>
+                                <textarea className="w-full h-32 border p-2 text-xs font-mono rounded bg-gray-50 mb-4" placeholder='JSON...' value={jsonImport} onChange={e => setJsonImport(e.target.value)}></textarea>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowImportModal(false)} className="flex-1 py-2 text-gray-600 border rounded">Cancelar</button>
+                                    <button onClick={handleImportJson} className="flex-1 py-2 bg-black text-white rounded font-bold">Carregar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
